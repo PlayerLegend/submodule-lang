@@ -1,0 +1,10 @@
+this is a series of tokens on one line
+here
+are
+several
+tokens with
+some newlines in
+between them
+and "here are some"
+"quotes to" test "the tokenizers"detection "abilities "for"such things"
+this(is)some (text with spaces) in()it "lets(see)how"it("interacts)"with)"(quotes)"
