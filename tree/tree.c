@@ -42,7 +42,7 @@ bool lang_tree_build_update (lang_tree_build_env * env, lang_token_position * to
     else
     {
 	lang_tree_node * new_node = calloc (1, sizeof(*new_node));
-
+	
 	*(env->stack.region.end[-1]) = new_node;
 	env->stack.region.end[-1] = &new_node->peer;
 	
@@ -55,6 +55,8 @@ bool lang_tree_build_update (lang_tree_build_env * env, lang_token_position * to
 	    new_node->is_text = true;
 	    new_node->immutable.text = token_text.text;
 	}
+
+	new_node->source_position = *token_position;
 
 	return true;
     }

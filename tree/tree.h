@@ -16,6 +16,7 @@ struct lang_tree_node {
 	immutable_text immutable;
 	lang_tree_node * child;
     };
+    lang_token_position source_position;
     lang_tree_node * peer;
 };
 
