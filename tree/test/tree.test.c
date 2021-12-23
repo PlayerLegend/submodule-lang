@@ -29,7 +29,7 @@ int main()
     
     while (tokenizer_read (&error, &token_text, &state))
     {
-	token_immutable = immutable_range(NULL, &token_text);
+	token_immutable = immutable_string_range(NULL, &token_text);
 
 	assert (token_immutable.text);
 	
