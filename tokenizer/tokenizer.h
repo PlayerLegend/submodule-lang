@@ -4,14 +4,14 @@
 #define FLAT_INCLUDES
 #include "../../range/def.h"
 #include "../../window/def.h"
-#include "../../convert/def.h"
+#include "../../convert/source.h"
 #include "../error/error.h"
 #endif
 
 typedef struct {
     lang_token_position input_position;
     lang_token_position token_position;
-    convert_interface * source;
+    convert_source * source;
 }
     lang_tokenizer_state;
 

@@ -1,14 +1,15 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <unistd.h>
 #define FLAT_INCLUDES
 #include "../../../range/def.h"
 #include "../../../log/log.h"
 #include "../../../window/def.h"
 #include "../../../window/alloc.h"
 #include "../../../keyargs/keyargs.h"
-#include "../../../convert/def.h"
-#include "../../../convert/fd.h"
+#include "../../../convert/source.h"
+#include "../../../convert/fd/source.h"
 #include "../../error/error.h"
 #include "../../../immutable/immutable.h"
 #include "../tree.h"
@@ -17,8 +18,8 @@
 int main()
 {
     window_unsigned_char read_buffer = {0};
-    fd_interface fd_read = fd_interface_init (.fd = STDIN_FILENO, .read_buffer = &read_buffer);
-    lang_tokenizer_state state = { .input_position.line = 1, .source = &fd_read.interface };
+    fd_source fd_read = fd_source_init (.fd = STDIN_FILENO, .contents = &read_buffer);
+    lang_tokenizer_state state = { .input_position.line = 1, .source = &fd_read.source };
     range_const_char token_text;
     immutable_text token_immutable;
    

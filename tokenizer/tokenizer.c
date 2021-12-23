@@ -9,7 +9,7 @@
 #include "../../table/table-string.h"
 #include "../../window/def.h"
 #include "../../window/alloc.h"
-#include "../../convert/def.h"
+#include "../../convert/source.h"
 #include "../../log/log.h"
 #include "../error/error.h"
 #include "tokenizer.h"
@@ -69,7 +69,7 @@ static void update_position (lang_token_position * position, char c)
 
 static bool skip_whitespace (bool * error, lang_tokenizer_state * state)
 {
-    window_unsigned_char * buffer = state->source->read_buffer;
+    window_unsigned_char * buffer = state->source->contents;
     
     while (true)
     {
@@ -100,7 +100,7 @@ static bool skip_whitespace (bool * error, lang_tokenizer_state * state)
 
 bool tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state)
 {
-    window_unsigned_char * buffer = state->source->read_buffer;
+    window_unsigned_char * buffer = state->source->contents;
     
     window_alloc (*buffer, 1024);
 

@@ -2,8 +2,8 @@ test/tokenizer: src/log/log.o
 test/tokenizer: src/lang/tokenizer/tokenizer.o
 test/tokenizer: src/lang/tokenizer/test/tokenizer.test.o
 test/tokenizer: src/window/alloc.o
-test/tokenizer: src/convert/def.o
-test/tokenizer: src/convert/fd.o
+test/tokenizer: src/convert/source.o
+test/tokenizer: src/convert/fd/source.o
 
 test/run-tokenizer: src/lang/tokenizer/test/tokenizer.test.sh
 
