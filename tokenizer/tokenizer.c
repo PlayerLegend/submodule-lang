@@ -81,7 +81,7 @@ static bool skip_whitespace (bool * error, lang_tokenizer_state * state)
 
 	if (range_is_empty (buffer->region))
 	{
-	    if (!convert_fill(error, state->source))
+	    if (!convert_fill_alloc(error, state->source))
 	    {
 		return false;
 	    }
