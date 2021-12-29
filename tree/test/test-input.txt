@@ -2,4 +2,5 @@ a
 (this is a list)
 (here's another list
 (with several (lists in) it ())
+"here is a quoted string"
 )
