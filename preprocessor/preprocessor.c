@@ -126,7 +126,7 @@ static void lang_define_clear (lang_define * target)
     lang_tree_free (target->root);
 }
 
-inline static bool get_text (immutable_text * text, lang_tree_node * node) // potential to recursively evaluate macros here
+inline static bool get_text (bool * error, immutable_text * text, lang_tree_node * node) // potential to recursively evaluate macros here
 {
     if (!node || !node->is_text)
     {
@@ -136,6 +136,13 @@ inline static bool get_text (immutable_text * text, lang_tree_node * node) // po
     *text = node->immutable;
 
     return true;
+}
+
+inline static bool is_text (bool * error, lang_tree_node * node)
+{
+    immutable_text text;
+
+    return get_text (error, &text, node);
 }
 
 static bool setup_define (lang_define * target, memory_buffers * buffers, lang_tree_node * define_root)
@@ -172,21 +179,23 @@ static bool setup_define (lang_define * target, memory_buffers * buffers, lang_t
 
     lang_define_arg * set_arg;
 
+    bool error = false;
+
     while (arg)
     {
 	set_arg = window_push (buffers->arg);
 
 	*set_arg = (lang_define_arg) {0};
 	
-	if (get_text (&arg_name, arg))
+	if (get_text (&error, &arg_name, arg))
 	{
 	    setup_define_arg (set_arg, &buffers->immutable, target->root, arg_name);
 	}
-	else
+	else if(!error)
 	{
 	    arg_key = arg->child;
 
-	    if (!get_text (&arg_name, arg_key))
+	    if (!get_text (&error, &arg_name, arg_key))
 	    {
 		lang_log_fatal (arg->source_position, "Invalid key-value argument syntax");
 	    }
@@ -196,6 +205,10 @@ static bool setup_define (lang_define * target, memory_buffers * buffers, lang_t
 	    arg_value = arg_key->peer;
 
 	    set_arg->default_value = lang_tree_copy (arg_value);
+	}
+	else
+	{
+	    return false;
 	}
 	
 	arg = arg->peer;
@@ -214,162 +227,103 @@ window_typedef (lang_define, lang_define);
 
 typedef struct {
     window_lang_define defines;
-    size_t tree_depth;
+    lang_tree_node ** target;
 }
     lang_namespace;
-
-static void lang_namespace_clear (lang_namespace * target)
-{
-    lang_define * i;
-
-    for_range (i, target->defines.region)
-    {
-	lang_define_clear(i);
-    }
-
-    window_clear (target->defines);
-}
 
 range_typedef (lang_namespace, lang_namespace);
 window_typedef (lang_namespace, lang_namespace);
 
+static void lang_namespace_clear (lang_namespace * target)
+{
+    window_clear_type (target->defines, lang_define);
+}
+
 typedef struct {
     range_const_char path;
-    size_t tree_depth;
-}
-    lang_directory;
+    range_const_char dirname;
 
-range_typedef(lang_directory, lang_directory);
-window_typedef(lang_directory, lang_directory);
+    lang_tree_node ** insertion_point;
+
+    lang_tree_node * root;
+}
+    lang_file;
+
+range_typedef(lang_file,lang_file);
+window_typedef(lang_file,lang_file);
 
 typedef struct {
-   
-    struct {
-	window_lang_directory directory;
-	window_lang_tree_node_pp iter;
-	window_lang_namespace namespace;
-    }
-	stack;
-    
+    window_lang_file files;
+    window_lang_namespace namespaces;
     immutable_namespace * immutable_namespace;
 }
     lang_state;
 
-static bool lang_apply_define (lang_state * state, memory_buffers * buffers, lang_tree_node ** define_root)
-{
-    size_t tree_depth = range_count (state->stack.iter.region);
-
-    if (range_is_empty (state->stack.namespace.region) || tree_depth < state->stack.namespace.region.end[-1].tree_depth)
-    {
-	*window_push (state->stack.namespace) = (lang_namespace) { .tree_depth = tree_depth };
-    }
-
-    lang_namespace * top_namespace = state->stack.namespace.region.end - 1;
-
-    if (!setup_define (window_push (top_namespace->defines), buffers, *define_root))
-    {
-	return false;
-    }
-
-    lang_tree_node * to_free = *define_root;
-
-    *define_root = to_free->peer;
-
-    lang_tree_free(to_free);
-
-    return true;
-}
-
 static void lang_state_clear (lang_state * target)
 {
-    lang_namespace * i;
-	
-    for_range (i, target->stack.namespace.region)
-    {
-	lang_namespace_clear (i);
-    }
-	
-    window_clear (target->stack.namespace);
-    window_clear (target->stack.directory);
-    window_clear (target->stack.iter);
+    window_clear (target->files);
+    window_clear_type (target->namespaces, lang_namespace);
 }
 
-static void lang_state_add_dir (lang_state * state, range_const_char * immutable_path)
+static void delete_node (lang_tree_node ** node)
 {
-    assert (range_is_empty (state->stack.directory.region) || state->stack.directory.region.end[-1].tree_depth < (size_t) range_count(state->stack.iter.region));
-    
-    range_const_char dirname = *immutable_path;
-
-    range_dirname (&dirname, PATH_SEPARATOR);
-    
-    *window_push (state->stack.directory) = (lang_directory)
+    if (!*node)
     {
-	.path = dirname,
-	.tree_depth = range_count (state->stack.iter.region)
-    };
+	return;
+    }
+    
+    lang_tree_node * to_free = *node;
+
+    *node = to_free->peer;
+
+    to_free->peer = NULL;
+
+    lang_tree_free(to_free);
 }
 
-static void lang_state_add_todo (lang_state * state, lang_tree_node ** todo)
+static bool lang_add_define_to_namespace (lang_namespace * namespace, memory_buffers * buffers, lang_tree_node * define_root)
 {
-    *window_push (state->stack.iter) = todo;
+    return setup_define (window_push (namespace->defines), buffers, define_root);
 }
 
-static lang_tree_node ** lang_state_pop_todo (lang_state * state)
+static bool lang_add_define_to_state (lang_state * state, memory_buffers * buffers, lang_tree_node * define_root)
 {
-    size_t stack_size = range_count (state->stack.iter.region);
-    if (!stack_size)
-    {
-	return NULL;
-    }
+    assert (!range_is_empty (state->namespaces.region));
 
-    state->stack.iter.region.end--;
-    stack_size--;
-    
-    if (!range_is_empty (state->stack.directory.region))
-    {
-	assert (state->stack.directory.region.end[-1].tree_depth <= stack_size);
-	if (state->stack.directory.region.end[-1].tree_depth == stack_size)
-	{
-	    state->stack.directory.region.end--;
-	}
-	assert (range_is_empty(state->stack.directory.region) || state->stack.directory.region.end[-1].tree_depth < stack_size);
-    }
-
-    if (!range_is_empty (state->stack.namespace.region))
-    {
-	assert (state->stack.namespace.region.end[-1].tree_depth <= stack_size);
-	if (state->stack.namespace.region.end[-1].tree_depth == stack_size)
-	{
-	    state->stack.namespace.region.end--;
-	    lang_namespace_clear(state->stack.namespace.region.end);
-	}
-	assert (range_is_empty(state->stack.namespace.region) || state->stack.namespace.region.end[-1].tree_depth < stack_size);
-    }
-
-    
-    return *state->stack.iter.region.end;
+    return lang_add_define_to_namespace (state->namespaces.region.end - 1, buffers, define_root);
 }
 
-static void lang_state_resolve_path (window_char * path, lang_state * state, const range_const_char * append)
+
+
+static void lang_state_resolve_path (window_char * path, lang_state * state)
 {
     window_strcpy (path, ".");
 
-    lang_directory * i;
-
-    for_range (i, state->stack.directory.region)
+    if (range_is_empty (state->files.region))
     {
-	window_path_cat(path, PATH_SEPARATOR, &i->path);
+	return;
+    }
+    
+    lang_file * i;
+
+    range_lang_file parents = state->files.region;
+
+    parents.end--;
+
+    for_range (i, parents)
+    {
+	window_path_cat(path, PATH_SEPARATOR, &i->dirname);
     }
 
-    window_path_cat (path, PATH_SEPARATOR, append);
-
-    window_path_resolve(path, PATH_SEPARATOR);
+    window_path_cat (path, PATH_SEPARATOR, &state->files.region.end[-1].path);
 }
 
-static lang_tree_node * lang_state_load_path (lang_state * state, memory_buffers * buffers, const range_const_char * path)
+static lang_tree_node * lang_state_load_path (lang_state * state, memory_buffers * buffers)
 {
-    lang_state_resolve_path (&buffers->path, state, path);
+    lang_state_resolve_path (&buffers->path, state);
 
+    log_debug ("loading path " RANGE_FORMSPEC, RANGE_FORMSPEC_ARG(buffers->path.region));
+    
     window_rewrite (buffers->file);
     
     fd_source fd_source = fd_source_init (.fd = open (buffers->path.region.begin, O_RDONLY), .contents = &buffers->file);
@@ -386,35 +340,125 @@ static lang_tree_node * lang_state_load_path (lang_state * state, memory_buffers
     return retval;
 }
 
+
+static bool lang_state_start_file (lang_state * state, memory_buffers * buffers, lang_tree_node ** insertion_point)
+{
+    lang_tree_node * include_root = *insertion_point;
+
+    assert (include_root);
+    assert (!include_root->is_text);
+
+    lang_tree_node * include_keyword = include_root->child;
+
+    bool error = false;
+    assert (is_text (&error, include_keyword));
+
+    lang_tree_node * include_path = include_keyword->peer;
+
+    immutable_text include_path_text = {0};
+
+    if (!get_text (&error, &include_path_text, include_path))
+    {
+	lang_log_fatal (include_root->source_position, "Could not get include path in include");
+    }
+
+    lang_file * new_file = window_push (state->files);
+
+    range_string_init (&new_file->path, include_path_text.text);
+
+    new_file->dirname = new_file->path;
+    range_dirname (&new_file->dirname, PATH_SEPARATOR);
+
+    new_file->root = lang_state_load_path (state, buffers);
+    
+    new_file->insertion_point = insertion_point;
+
+    delete_node (insertion_point);
+
+    return true;
+
+fail:
+    return false;
+}
+
+static bool lang_state_finish_file (lang_state * state)
+{
+    assert (!range_is_empty (state->files.region));
+
+    lang_file * finish_file = --state->files.region.end;
+
+    if (!finish_file->root)
+    {
+	return true;
+    }
+
+    lang_tree_node ** file_end = &finish_file->root->peer;
+
+    while (*file_end)
+    {
+	*file_end = (*file_end)->peer;
+    }
+
+    *file_end = *finish_file->insertion_point;
+
+    *finish_file->insertion_point = finish_file->root;
+
+    return true;
+
+}
+
 typedef struct {
     immutable_text define;
     immutable_text include;
 }
     lang_keywords;
 
-static bool lang_parse_keywords (lang_state * state, lang_tree_node ** target, memory_buffers * buffers, const lang_keywords * keywords)
+static bool lang_iterate (lang_state * state, memory_buffers * buffers, const lang_keywords * keywords)
 {
+    assert (!range_is_empty (state->namespaces.region));
     
-    if (!(*target)->is_text && (*target)->child)
-    {
-	lang_tree_node * target_child = (*target)->child;
-	    
-	if (target_child->is_text)
-	{
-	    if (target_child->immutable.text == keywords->define.text)
-	    {
-		if (!lang_apply_define(state, buffers, target))
-		{
-		    return false;
-		}
-	    }
-	    else if (target_child->immutable.text == keywords->include.text)
-	    {
-		    
-	    }
-	}
+    lang_namespace * top_namespace = state->namespaces.region.end - 1;
 
+    lang_tree_node ** target = top_namespace->target;
+
+    lang_tree_node * target_child;
+
+    bool error = false;
 	    
+    if (is_text (&error, *target) || !(target_child = (*target)->child))
+    {
+	*target = (*target)->peer;
+
+	return true;
+    }
+
+    if (error)
+    {
+	return false;
+    }
+
+    immutable_text target_child_text = {0};
+
+    if (!get_text(&error, &target_child_text, target_child))
+    {
+	return !error;
+    }
+    
+    if (target_child_text.text == keywords->define.text)
+    {
+	if (lang_add_define_to_state(state, buffers, *target))
+	{
+	    delete_node (target);
+	    return true;
+	}
+	else
+	{
+	    return false;
+	}
+    }
+    else if (target_child->immutable.text == keywords->include.text)
+    {
+	return lang_state_start_file(state, buffers, target);
     }
 }
 
