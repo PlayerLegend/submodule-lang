@@ -98,7 +98,7 @@ static bool skip_whitespace (bool * error, lang_tokenizer_state * state)
     return true;
 }
 
-bool tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state)
+bool lang_tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state)
 {
     window_unsigned_char * buffer = state->source->contents;
     

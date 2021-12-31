@@ -22,7 +22,7 @@ int main()
     bool error = false;
     range_const_char token;
     
-    while (tokenizer_read (&error, &token, &state))
+    while (lang_tokenizer_read (&error, &token, &state))
     {
 	log_normal ("TOKEN: (%02d,%02d) [%.*s]", state.token_position.line, state.token_position.col, range_count(token), token.begin);
     }

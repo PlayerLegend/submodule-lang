@@ -9,27 +9,34 @@
 #include "../../window/alloc.h"
 #include "../../immutable/immutable.h"
 #include "../error/error.h"
+#include "../../convert/source.h"
+#include "../tokenizer/tokenizer.h"
 #include "tree.h"
 #include "../../log/log.h"
 
-range_typedef (lang_tree_node*, lang_tree_node_p);
-window_typedef (lang_tree_node*, lang_tree_node_p);
-
-void lang_tree_build_start (lang_tree_build_env * env)
+void lang_tree_build_start (lang_tree_build_env * env, immutable_namespace * namespace)
 {
+    *env = (lang_tree_build_env){0};
     env->root = NULL;
     window_rewrite (env->stack);
     *window_push (env->stack) = &env->root;
+    env->namespace = namespace;
 }
 
-bool lang_tree_build_update (lang_tree_build_env * env, lang_token_position * token_position, immutable_text token_text)
+bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_position * token_position, const range_const_char * token)
 {
     env->last_position = *token_position;
+
+    if (range_is_empty (*token))
+    {
+	lang_log_fatal (*token_position, "Empty token");
+    }
     
-    if (*token_text.text == ')')
+    if (range_count(*token) == 1 && *token->begin == ')')
     {
 	assert (!range_is_empty (env->stack.region));
 	env->stack.region.end--;
+
 	if (range_is_empty (env->stack.region))
 	{
 	    lang_log_fatal (env->last_position, "Extra closing paren");
@@ -46,14 +53,30 @@ bool lang_tree_build_update (lang_tree_build_env * env, lang_token_position * to
 	*(env->stack.region.end[-1]) = new_node;
 	env->stack.region.end[-1] = &new_node->peer;
 	
-	if (*token_text.text == '(')
+	if (range_count(*token) == 1 && *token->begin == '(')
 	{
 	    *window_push (env->stack) = &new_node->child;
 	}
 	else
 	{
 	    new_node->is_text = true;
-	    new_node->immutable.text = token_text.text;
+
+	    range_const_char mod_token = *token;
+
+	    if (*mod_token.begin == '"')
+	    {
+		if (range_count (*token) < 2 || mod_token.end[-1] != '"')
+		{
+		    lang_log_fatal (*token_position, "Unterminated quote");
+		}
+
+		new_node->is_quoted = true;
+
+		mod_token.begin++;
+		mod_token.end--;
+	    }
+	    
+	    new_node->immutable = immutable_string_range(env->namespace, &mod_token);
 	}
 
 	new_node->source_position = *token_position;
@@ -94,7 +117,7 @@ void lang_tree_free (lang_tree_node * root)
     free (stack.alloc.begin);
 }
 
-lang_tree_node * lang_tree_build_finish (lang_tree_build_env * env)
+lang_tree_node * lang_tree_build_finish (bool * error, lang_tree_build_env * env)
 {
     if (range_count (env->stack.region) != 1)
     {
@@ -104,17 +127,20 @@ lang_tree_node * lang_tree_build_finish (lang_tree_build_env * env)
 
     lang_tree_node * root = env->root;
     
-    env->root = NULL;
-
+    lang_tree_build_clear (env);
+    
     return root;
 
 fail:
-    return false;
+
+    lang_tree_build_clear (env);
+    *error = true;
+    return NULL;
 }
 
 void lang_tree_build_clear (lang_tree_build_env * env)
 {
-    free (env->stack.region.begin);
+    window_clear(env->stack);
     *env = (lang_tree_build_env){0};
 }
 
@@ -132,7 +158,7 @@ static void lang_node_print (int depth, lang_tree_node * node)
     }
     else if (node->is_text)
     {
-	log_normal ("[%s]", node->immutable.text);
+	log_normal ("%s [%s]", node->is_quoted ? "quote" : "lit", node->immutable.text);
     }
     else
     {
@@ -175,7 +201,7 @@ void lang_tree_print (lang_tree_node * root)
     free (stack.alloc.begin);
 }
 
-lang_tree_node * lang_tree_copy (lang_tree_node * root)
+lang_tree_node * lang_tree_copy (const lang_tree_node * root)
 {
     assert (root);
     
@@ -221,4 +247,34 @@ lang_tree_node * lang_tree_copy (lang_tree_node * root)
     free (stack.alloc.begin);
 
     return copy_root;
+}
+
+lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, convert_source * source)
+{
+    range_const_char token;
+    
+    lang_tokenizer_state tokenizer_state = { .source = source };
+
+    lang_tree_build_env build_env;
+
+    lang_tree_build_start(&build_env, namespace);
+
+    tokenizer_state.input_position.line = 1;
+
+    while (lang_tokenizer_read (error, &token, &tokenizer_state))
+    {
+	if (!lang_tree_build_update(&build_env, &tokenizer_state.token_position, &token))
+	{
+	    *error = true;
+	    return NULL;
+	}
+    }
+
+    if (*error)
+    {
+	lang_tree_build_clear(&build_env);
+	return NULL;
+    }
+
+    return lang_tree_build_finish(error, &build_env);
 }

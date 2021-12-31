@@ -15,4 +15,4 @@ typedef struct {
 }
     lang_tokenizer_state;
 
-bool tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state);
+bool lang_tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state);

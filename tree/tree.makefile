@@ -17,3 +17,5 @@ tests: tree-tests
 
 C_PROGRAMS += test/tree
 SH_PROGRAMS += test/run-tree
+
+RUN_TESTS += test/run-tree
