@@ -90,6 +90,11 @@ fail:
 
 void lang_tree_free (lang_tree_node * root)
 {
+    if (!root)
+    {
+	return;
+    }
+    
     window_lang_tree_node_p stack = {0};
     lang_tree_node tmp;    
 

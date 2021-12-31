@@ -21,7 +21,7 @@
 void lang_define_arg_clear (lang_define_arg * target)
 {
     lang_tree_free (target->default_value);
-    window_clear (target->occurances);
+    range_clear (target->occurances);
 }
 
 void lang_define_clear (lang_define * target)
@@ -163,7 +163,11 @@ fail:
 
 void lang_define_arg_occurance_set (lang_define_arg_occurance * occurance, const lang_tree_node * node)
 {
-    lang_tree_node * copy = node ? lang_tree_copy(node) : calloc (1, sizeof(lang_tree_node));
+    lang_tree_node mod_node = *node;
+
+    mod_node.peer = NULL;
+    
+    lang_tree_node * copy = node ? lang_tree_copy(&mod_node) : calloc (1, sizeof(lang_tree_node));
 
     lang_tree_node * end = copy;
 
@@ -213,4 +217,45 @@ bool lang_define_arg_is_set (lang_define_arg * arg)
     {
 	return false;
     }
+}
+
+lang_tree_node * lang_define_invoke (bool * error, lang_define * define, const lang_tree_node * arg)
+{
+    lang_define_arg * define_arg;
+
+    const lang_tree_node * arg_root = arg;
+
+    for_range (define_arg, define->args)
+    {
+	define_arg->is_set = false;
+    }
+
+    define_arg = define->args.begin;
+    
+    while (arg)
+    {
+	if (define_arg >= define->args.end)
+	{
+	    lang_log_fatal(arg->source_position, "Too many args provided to macro invocation, should be %zu", range_count(define->args));
+	}
+
+	lang_define_arg_set(define_arg, arg);
+
+	define_arg++;
+
+	arg = arg->peer;
+    }
+
+    for_range (define_arg, define->args)
+    {
+	if (!lang_define_arg_is_set(define_arg))
+	{
+	    lang_log_fatal(arg_root->source_position, "Not enough arguments in macro invocation");
+	}
+    }
+
+    return lang_tree_copy(define->root);
+
+fail:
+    return NULL;
 }

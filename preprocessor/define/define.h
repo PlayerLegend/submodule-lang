@@ -46,3 +46,4 @@ bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer
 void lang_define_arg_occurance_set (lang_define_arg_occurance * occurance, const lang_tree_node * node);
 void lang_define_arg_set (lang_define_arg * arg, const lang_tree_node * node);
 bool lang_define_arg_is_set (lang_define_arg * arg);
+lang_tree_node * lang_define_invoke (bool * error, lang_define * define, const lang_tree_node * args);
