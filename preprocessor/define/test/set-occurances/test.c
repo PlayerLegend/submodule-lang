@@ -22,7 +22,7 @@ int main(int argc, char * argv[])
     
     immutable_namespace * namespace = immutable_namespace_new();
     
-    window_lang_define_arg_occurance occurances = {0};
+    window_lang_tree_node_p occurances = {0};
 
     lang_tree_node * load_root = load_tree (namespace);
     lang_tree_node * occurances_root;
@@ -35,19 +35,16 @@ int main(int argc, char * argv[])
 
     immutable_text match = immutable_string(namespace, argv[1]);
 
-    lang_define_arg_list_occurances (&occurances, &occurances_root, match);
+    lang_define_arg_list_occurances (&occurances, occurances_root, match);
 
-    lang_define_arg_occurance * occurance;
+    lang_tree_node ** occurance;
 
     for_range (occurance, occurances.region)
     {
-	assert (occurance->in);
-	assert (*occurance->in);
-	assert (occurance->out);
-	assert (&(*occurance->in)->peer == occurance->out);
+	assert (*occurance);
 
-	log_normal ("%d %d", (*occurance->in)->source_position.line, (*occurance->in)->source_position.col);
-	lang_define_arg_occurance_set(occurance, replace);
+	log_normal ("%d %d", (*occurance)->source_position.line, (*occurance)->source_position.col);
+	lang_define_arg_occurance_set(*occurance, replace);
     }
 
     lang_tree_print(occurances_root);

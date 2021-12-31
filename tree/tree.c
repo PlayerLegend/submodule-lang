@@ -208,7 +208,10 @@ void lang_tree_print (lang_tree_node * root)
 
 lang_tree_node * lang_tree_copy (const lang_tree_node * root)
 {
-    assert (root);
+    if (!root)
+    {
+	return NULL;
+    }
     
     lang_tree_node * copy_root = malloc (sizeof(*copy_root));
 

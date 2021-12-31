@@ -38,43 +38,38 @@ void lang_define_clear (lang_define * target)
     lang_tree_free (target->root);
 }
 
-void lang_define_arg_list_occurances (window_lang_define_arg_occurance * occurances, lang_tree_node ** root, immutable_text match)
+void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang_tree_node * root, immutable_text match)
 {
     window_rewrite (*occurances);
     
-    window_lang_tree_node_pp stack = {0};
+    window_lang_tree_node_p stack = {0};
 
-    lang_tree_node ** node_ref = root;
-
-    lang_tree_node * node;
-
-    assert (node_ref);
+    lang_tree_node * node = root;
     
-    while (node_ref && (node = *node_ref))
+    while (node)
     {
 	if (node->is_text)
 	{
 	    if (node->immutable.text == match.text)
 	    {
-		assert (*node_ref);
-		*window_push (*occurances) = (lang_define_arg_occurance) { .in = node_ref, .out = &node->peer };
+		*window_push (*occurances) = node;
 	    }
-	    
-	    node_ref = &node->peer;
+
+	    node = node->peer;
 	}
 	else if (node->child)
 	{
-	    lang_tree_stack_push(&stack, &node->peer);
-	    node_ref = &node->child;
+	    lang_tree_stack_push(&stack, node->peer);
+	    node = node->child;
 	}
 	else
 	{
-	    node_ref = &node->peer;
+	    node = node->peer;
 	}
-        
-	if (!*node_ref)
+
+	if (!node)
 	{
-	    node_ref = lang_tree_stack_pop(&stack);
+	    node = lang_tree_stack_pop(&stack);
 	}
     }
     
@@ -82,7 +77,7 @@ void lang_define_arg_list_occurances (window_lang_define_arg_occurance * occuran
 }
 
 
-void lang_define_arg_init (lang_define_arg * target, window_lang_define_arg_occurance * buffer, lang_tree_node ** root, immutable_text match)
+void lang_define_arg_init (lang_define_arg * target, window_lang_tree_node_p * buffer, lang_tree_node * root, immutable_text match)
 {
     target->name = match;
     lang_define_arg_list_occurances (buffer, root, match);
@@ -90,7 +85,7 @@ void lang_define_arg_init (lang_define_arg * target, window_lang_define_arg_occu
 }
 
 
-bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer, window_lang_define_arg_occurance * occurance_buffer, lang_tree_node * root)
+bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer, window_lang_tree_node_p * occurance_buffer, lang_tree_node * root)
 {
     *target = (lang_define){0};
 
@@ -133,7 +128,7 @@ bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer
 	
 	if (arg->is_text)
 	{
-	    lang_define_arg_init (set_arg, occurance_buffer, &target->root, arg->immutable);
+	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg->immutable);
 	}
 	else
 	{
@@ -144,7 +139,7 @@ bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer
 		lang_log_fatal (arg->source_position, "Invalid key-value argument syntax");
 	    }
 
-	    lang_define_arg_init (set_arg, occurance_buffer, &target->root, arg_key->immutable);
+	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg_key->immutable);
 	    
 	    set_arg->default_value = lang_tree_copy (arg_key->peer);
 	}
@@ -161,41 +156,34 @@ fail:
 }
 
 
-void lang_define_arg_occurance_set (lang_define_arg_occurance * occurance, const lang_tree_node * node)
+void lang_define_arg_occurance_set (lang_tree_node * occurance, const lang_tree_node * node)
 {
-    lang_tree_node mod_node = *node;
+    lang_tree_node * child;
 
-    mod_node.peer = NULL;
-    
-    lang_tree_node * copy = node ? lang_tree_copy(&mod_node) : calloc (1, sizeof(lang_tree_node));
-
-    lang_tree_node * end = copy;
-
-    while (end->peer)
+    if (lang_tree_get_child(&child, occurance))
     {
-	end = end->peer;
+	lang_tree_free (child);
     }
 
-    lang_tree_node * rest = *occurance->out;
+    occurance->is_text = node->is_text;
 
-    *occurance->out = NULL;
-
-    lang_tree_free (*occurance->in);
-
-    *occurance->in = copy;
-
-    occurance->out = &end->peer;
-
-    *occurance->out = rest;
+    if (node->is_text)
+    {
+	occurance->immutable = node->immutable;
+    }
+    else
+    {
+	occurance->child = lang_tree_copy (node->child);
+    }
 }
 
 void lang_define_arg_set (lang_define_arg * arg, const lang_tree_node * node)
 {
-    lang_define_arg_occurance * occurance;
+    lang_tree_node ** occurance;
 
     for_range (occurance, arg->occurances)
     {
-	lang_define_arg_occurance_set (occurance, node);
+	lang_define_arg_occurance_set (*occurance, node);
     }
 
     arg->is_set = true;

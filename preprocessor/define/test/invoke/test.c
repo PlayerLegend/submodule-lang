@@ -31,7 +31,7 @@ int main()
 
     lang_define define = {0};
     window_lang_define_arg arg_buffer = {0};
-    window_lang_define_arg_occurance occurance_buffer = {0};
+    window_lang_tree_node_p occurance_buffer = {0};
 
     lang_define_init (&define, &arg_buffer, &occurance_buffer, load_root);
 
