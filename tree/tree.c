@@ -117,7 +117,7 @@ void lang_tree_free (lang_tree_node * root)
     free (stack.alloc.begin);
 }
 
-lang_tree_node * lang_tree_build_finish (lang_tree_build_env * env)
+lang_tree_node * lang_tree_build_finish (bool * error, lang_tree_build_env * env)
 {
     if (range_count (env->stack.region) != 1)
     {
@@ -134,7 +134,8 @@ lang_tree_node * lang_tree_build_finish (lang_tree_build_env * env)
 fail:
 
     lang_tree_build_clear (env);
-    return false;
+    *error = true;
+    return NULL;
 }
 
 void lang_tree_build_clear (lang_tree_build_env * env)
@@ -200,7 +201,7 @@ void lang_tree_print (lang_tree_node * root)
     free (stack.alloc.begin);
 }
 
-lang_tree_node * lang_tree_copy (lang_tree_node * root)
+lang_tree_node * lang_tree_copy (const lang_tree_node * root)
 {
     assert (root);
     
@@ -248,10 +249,8 @@ lang_tree_node * lang_tree_copy (lang_tree_node * root)
     return copy_root;
 }
 
-lang_tree_node * lang_tree_load (immutable_namespace * namespace, convert_source * source)
+lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, convert_source * source)
 {
-    bool error = false;
-
     range_const_char token;
     
     lang_tokenizer_state tokenizer_state = { .source = source };
@@ -260,19 +259,22 @@ lang_tree_node * lang_tree_load (immutable_namespace * namespace, convert_source
 
     lang_tree_build_start(&build_env, namespace);
 
-    while (lang_tokenizer_read (&error, &token, &tokenizer_state))
+    tokenizer_state.input_position.line = 1;
+
+    while (lang_tokenizer_read (error, &token, &tokenizer_state))
     {
 	if (!lang_tree_build_update(&build_env, &tokenizer_state.token_position, &token))
 	{
-	    return false;
+	    *error = true;
+	    return NULL;
 	}
     }
 
-    if (error)
+    if (*error)
     {
 	lang_tree_build_clear(&build_env);
-	return false;
+	return NULL;
     }
 
-    return lang_tree_build_finish(&build_env);
+    return lang_tree_build_finish(error, &build_env);
 }

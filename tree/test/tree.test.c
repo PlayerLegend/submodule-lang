@@ -20,7 +20,9 @@ int main()
     window_unsigned_char read_buffer = {0};
     fd_source fd_read = fd_source_init (.fd = STDIN_FILENO, .contents = &read_buffer);
 
-    lang_tree_node * root = lang_tree_load (NULL, &fd_read.source);
+    bool error = false;
+
+    lang_tree_node * root = lang_tree_load (&error, NULL, &fd_read.source);
     
     if (!root)
     {

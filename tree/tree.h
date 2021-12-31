@@ -38,9 +38,33 @@ typedef struct {
 
 void lang_tree_build_start (lang_tree_build_env * env, immutable_namespace * namespace);
 bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_position * token_position, const range_const_char * token);
-lang_tree_node * lang_tree_build_finish (lang_tree_build_env * env);
-lang_tree_node * lang_tree_load (immutable_namespace * namespace, convert_source * source);
+lang_tree_node * lang_tree_build_finish (bool * error, lang_tree_build_env * env);
+lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, convert_source * source);
 void lang_tree_build_clear (lang_tree_build_env * env);
 void lang_tree_free (lang_tree_node * root);
 void lang_tree_print (lang_tree_node * root);
-lang_tree_node * lang_tree_copy (lang_tree_node * root);
+lang_tree_node * lang_tree_copy (const lang_tree_node * root);
+
+inline static bool lang_tree_get_child (lang_tree_node ** result, lang_tree_node * parent)
+{
+    if (!parent || parent->is_text)
+    {
+	return false;
+    }
+
+    *result = parent->child;
+
+    return true;
+}
+
+inline static bool lang_tree_get_text (immutable_text * text, lang_tree_node * parent)
+{
+    if (!parent || !parent->is_text)
+    {
+	return false;
+    }
+
+    *text = parent->immutable;
+
+    return true;
+}

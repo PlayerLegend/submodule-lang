@@ -1,0 +1,77 @@
+2 22
+3 7
+3 45
+3 77
+6 7
+6 27
+(
+	(
+		lit [this]
+		lit [is]
+		lit [a]
+		lit [list]
+	)
+	(
+		lit [this]
+		lit [is]
+		lit [a]
+		lit [list]
+		lit [with]
+		(
+			lit [bcle]
+		)
+	)
+	(
+		lit [this]
+		(
+			lit [bcle]
+		)
+		lit [is]
+		lit [in]
+		lit [a]
+		lit [new]
+		lit [list]
+		(
+			lit [with]
+			lit [some]
+			lit [more]
+			(
+				lit [bcle]
+			)
+		)
+		(
+			lit [nested]
+			lit [within]
+		)
+		(
+			lit [but]
+			lit [only]
+			(
+				lit [bcle]
+			)
+			lit [intermittently]
+		)
+	)
+	(
+	)
+	(
+		lit [more]
+		lit [lists]
+	)
+	(
+		lit [more]
+		(
+			lit [bcle]
+		)
+		lit [lists]
+		(
+			lit [within]
+			(
+				(
+					lit [bcle]
+				)
+			)
+			lit [lists]
+		)
+	)
+)
