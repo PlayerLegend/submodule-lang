@@ -30,6 +30,9 @@ typedef struct {
 }
     lang_define;
 
+range_typedef (lang_define, lang_define);
+window_typedef (lang_define, lang_define);
+
 void lang_define_clear (lang_define * target);
 void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang_tree_node * root, immutable_text match);
 void lang_define_arg_init (lang_define_arg * target, window_lang_tree_node_p * buffer, lang_tree_node * root, immutable_text match);

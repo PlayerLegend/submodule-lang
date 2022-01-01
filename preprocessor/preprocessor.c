@@ -79,34 +79,7 @@ static void memory_buffers_clear (memory_buffers * target)
     window_clear (target->path);
 }
 
-typedef struct {
-    immutable_text name;
-    lang_tree_node * root;
-    range_lang_define_arg args;
-}
-    lang_define;
 
-typedef struct {
-    immutable_text define;
-    immutable_text include;
-}
-    lang_keywords;
-
-
-range_typedef (lang_define, lang_define);
-window_typedef (lang_define, lang_define);
-
-typedef struct {
-    window_lang_define defines; // todo: turn this into a table
-}
-    lang_scope;
-
-typedef struct {
-    range_const_char basename;
-    range_const_char dirname;
-    lang_tree_node * root;
-}
-    lang_file;
 
 typedef enum {
     FRAME_NOT_SET,
