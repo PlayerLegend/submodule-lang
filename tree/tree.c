@@ -3,13 +3,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #define FLAT_INCLUDES
+#include "../../keyargs/keyargs.h"
 #include "../../range/def.h"
 #include "../../window/def.h"
 #include "../../window/alloc.h"
 #include "../../immutable/immutable.h"
 #include "../error/error.h"
 #include "../../convert/source.h"
+#include "../../convert/fd/source.h"
 #include "../tokenizer/tokenizer.h"
 #include "tree.h"
 #include "../../log/log.h"
@@ -257,7 +261,7 @@ lang_tree_node * lang_tree_copy (const lang_tree_node * root)
     return copy_root;
 }
 
-lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, convert_source * source)
+lang_tree_node * lang_tree_load_source (bool * error, immutable_namespace * namespace, convert_source * source)
 {
     range_const_char token;
     
@@ -285,4 +289,23 @@ lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, 
     }
 
     return lang_tree_build_finish(error, &build_env);
+}
+
+lang_tree_node * lang_tree_load_path (bool * error, immutable_namespace * namespace, const char * path)
+{
+    window_unsigned_char contents = {0};
+    fd_source fd_source = fd_source_init (.fd = open (path, O_RDONLY), .contents = &contents);
+    if (fd_source.fd < 0)
+    {
+	perror (path);
+	*error = true;
+	return NULL;
+    }
+    lang_tree_node * retval = lang_tree_load_source (error, namespace, &fd_source.source);
+
+    convert_source_clear (&fd_source.source);
+
+    window_clear (contents);
+
+    return retval;
 }

@@ -25,7 +25,7 @@ static lang_tree_node * load_tree (immutable_namespace * namespace)
 
     bool error = false;
 
-    lang_tree_node * retval = lang_tree_load (&error, namespace, &fd_source.source);
+    lang_tree_node * retval = lang_tree_load_source (&error, namespace, &fd_source.source);
 
     assert (!error);
     

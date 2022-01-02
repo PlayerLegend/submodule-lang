@@ -22,7 +22,7 @@ int main()
 
     bool error = false;
 
-    lang_tree_node * root = lang_tree_load (&error, NULL, &fd_read.source);
+    lang_tree_node * root = lang_tree_load_source (&error, NULL, &fd_read.source);
     
     if (!root)
     {

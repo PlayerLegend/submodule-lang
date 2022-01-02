@@ -39,7 +39,8 @@ typedef struct {
 void lang_tree_build_start (lang_tree_build_env * env, immutable_namespace * namespace);
 bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_position * token_position, const range_const_char * token);
 lang_tree_node * lang_tree_build_finish (bool * error, lang_tree_build_env * env);
-lang_tree_node * lang_tree_load (bool * error, immutable_namespace * namespace, convert_source * source);
+lang_tree_node * lang_tree_load_source (bool * error, immutable_namespace * namespace, convert_source * source);
+lang_tree_node * lang_tree_load_path (bool * error, immutable_namespace * namespace, const char * path);
 void lang_tree_build_clear (lang_tree_build_env * env);
 void lang_tree_free (lang_tree_node * root);
 void lang_tree_print (lang_tree_node * root);
