@@ -1,7 +1,7 @@
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <stdint.h>
 #define FLAT_INCLUDES
 #include "../../../../range/def.h"
 #include "../../../../window/def.h"
@@ -9,8 +9,8 @@
 #include "../../../error/error.h"
 #include "../../../../table/string.h"
 #include "../../../tree/tree.h"
-#include "../../transform.h"
-#include "../copy.h"
+#include "../../../transform/transform.h"
+#include "../include.h"
 
 int main(int argc, char * argv[])
 {
@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
     assert(argc == 2);
 
     host_string_to_none_table table = {0};
-    
+
     lang_tree_node * origin = lang_tree_load_path(&error, &table, argv[1]);
 
     lang_tree_print (origin);
@@ -32,7 +32,7 @@ int main(int argc, char * argv[])
 
     assert (origin);
 
-    assert (transform_copy_new (&error, &result, &state, origin));
+    assert (transform_include_new (&error, &result, &state, origin));
 
     assert (lang_transform_execute (&state));
 

@@ -14,7 +14,6 @@ typedef struct lang_transform lang_transform;
 typedef struct lang_transform_state lang_transform_state;
 range_typedef(lang_transform*, lang_transform_p);
 window_typedef(lang_transform*, lang_transform_p);
-typedef bool (*lang_transform_new)(bool * error, lang_tree_node ** result, lang_transform_state * state, const lang_tree_node * root);
 typedef bool (*lang_transform_iter)(lang_transform_state * state, lang_transform * top);
 typedef void (*lang_transform_clear)(lang_transform_state * state, lang_transform * target);
 

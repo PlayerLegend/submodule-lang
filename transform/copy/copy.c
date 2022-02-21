@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -6,13 +7,13 @@
 #include "../../../window/def.h"
 #include "../../../convert/source.h"
 #include "../../error/error.h"
-#include "../../../immutable/immutable.h"
+#include "../../../table/string.h"
 #include "../../tree/tree.h"
 #include "../transform.h"
 #include "copy.h"
 #include "../../../log/log.h"
 
-bool transform_copy_new (bool * error, lang_tree_node ** result, lang_transform_state * state, const lang_tree_node * root)
+lang_transform * transform_copy_new (bool * error, lang_tree_node ** result, lang_transform_state * state, const lang_tree_node * input)
 {
     lang_transform * new_transform = lang_transform_alloc(&state->stack, sizeof(transform_copy));
 
@@ -20,9 +21,9 @@ bool transform_copy_new (bool * error, lang_tree_node ** result, lang_transform_
 
     new_transform->result = result;
 
-    lang_transform_arg(new_transform, transform_copy)->target = root;
+    lang_transform_arg(new_transform, transform_copy)->target = input;
 
-    return true;
+    return new_transform;
 }
 
 bool transform_copy_iter(lang_transform_state * state, lang_transform * top)

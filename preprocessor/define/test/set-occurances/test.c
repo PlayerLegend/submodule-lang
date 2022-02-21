@@ -11,7 +11,7 @@
 #include "../../../../../convert/fd/source.h"
 #include "../../../../../log/log.h"
 #include "../../../../error/error.h"
-#include "../../../../../immutable/immutable.h"
+#include "../../../../../table/string.h"
 #include "../../../../tree/tree.h"
 #include "../../define.h"
 #include "../load.h"
@@ -19,12 +19,12 @@
 int main(int argc, char * argv[])
 {
     assert (argc > 1);
-    
-    immutable_namespace * namespace = immutable_namespace_new();
+
+    host_string_to_none_table table = { .link_size = table_string_link_size(table) };
     
     window_lang_tree_node_p occurances = {0};
 
-    lang_tree_node * load_root = load_tree (namespace);
+    lang_tree_node * load_root = load_tree (&table);
     lang_tree_node * occurances_root;
 
     assert (lang_tree_get_child(&occurances_root, load_root));
@@ -33,7 +33,7 @@ int main(int argc, char * argv[])
 
     assert (replace);
 
-    immutable_text match = immutable_string(namespace, argv[1]);
+    table_string_query * match = &host_string_to_none_include_string(&table, argv[1])->query;
 
     lang_define_arg_list_occurances (&occurances, occurances_root, match);
 
@@ -52,8 +52,6 @@ int main(int argc, char * argv[])
     window_clear (occurances);
 
     lang_tree_free (load_root);
-
-    immutable_namespace_free(namespace);
 
     return 0;
 }

@@ -12,7 +12,7 @@
 #include "../../../convert/source.h"
 #include "../../../log/log.h"
 #include "../../error/error.h"
-#include "../../../immutable/immutable.h"
+#include "../../../table/string.h"
 #include "../../tree/tree.h"
 #include "../../tree/stack.h"
 #include "define.h"
@@ -38,7 +38,7 @@ void lang_define_clear (lang_define * target)
     lang_tree_free (target->root);
 }
 
-void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang_tree_node * root, immutable_text match)
+void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang_tree_node * root, const table_string_query * match)
 {
     window_rewrite (*occurances);
     
@@ -50,7 +50,7 @@ void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang
     {
 	if (node->is_text)
 	{
-	    if (node->immutable.text == match.text)
+	    if (node->ref == match)
 	    {
 		*window_push (*occurances) = node;
 	    }
@@ -77,7 +77,7 @@ void lang_define_arg_list_occurances (window_lang_tree_node_p * occurances, lang
 }
 
 
-void lang_define_arg_init (lang_define_arg * target, window_lang_tree_node_p * buffer, lang_tree_node * root, immutable_text match)
+void lang_define_arg_init (lang_define_arg * target, window_lang_tree_node_p * buffer, lang_tree_node * root, const table_string_query * match)
 {
     target->name = match;
     lang_define_arg_list_occurances (buffer, root, match);
@@ -128,7 +128,7 @@ bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer
 	
 	if (arg->is_text)
 	{
-	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg->immutable);
+	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg->ref);
 	}
 	else
 	{
@@ -139,7 +139,7 @@ bool lang_define_init (lang_define * target, window_lang_define_arg * arg_buffer
 		lang_log_fatal (arg->source_position, "Invalid key-value argument syntax");
 	    }
 
-	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg_key->immutable);
+	    lang_define_arg_init (set_arg, occurance_buffer, target->root, arg_key->ref);
 	    
 	    set_arg->default_value = lang_tree_copy (arg_key->peer);
 	}
@@ -169,7 +169,7 @@ void lang_define_arg_occurance_set (lang_tree_node * occurance, const lang_tree_
 
     if (node->is_text)
     {
-	occurance->immutable = node->immutable;
+	occurance->ref = node->ref;
     }
     else
     {

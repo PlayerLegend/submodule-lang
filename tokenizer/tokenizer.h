@@ -11,8 +11,11 @@
 typedef struct {
     lang_token_position input_position;
     lang_token_position token_position;
-    convert_source * source;
 }
     lang_tokenizer_state;
 
-bool lang_tokenizer_read (bool * error, range_const_char * result, lang_tokenizer_state * state);
+bool lang_token_scan (lang_tokenizer_state * state, range_const_unsigned_char * text);
+
+bool lang_tokenizer_read_mem (bool * error, range_const_char * result, lang_tokenizer_state * state, range_const_unsigned_char * mem);
+bool lang_tokenizer_read_source (bool * error, range_const_char * result, lang_tokenizer_state * state, convert_source * source);
+

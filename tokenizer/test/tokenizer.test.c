@@ -16,13 +16,13 @@
 int main()
 {
     window_unsigned_char buffer = {0};
-    fd_source fd_read = fd_source_init (.fd = STDIN_FILENO, .contents = &buffer);
-    lang_tokenizer_state state = { .input_position.line = 1, .source = &fd_read.source };
+    fd_source fd_read = fd_source_init (STDIN_FILENO, &buffer);
+    lang_tokenizer_state state = { .input_position.line = 1 };
 
     bool error = false;
     range_const_char token;
     
-    while (lang_tokenizer_read (&error, &token, &state))
+    while (lang_tokenizer_read_source (&error, &token, &state, &fd_read.source))
     {
 	log_normal ("TOKEN: (%02d,%02d) [%.*s]", state.token_position.line, state.token_position.col, range_count(token), token.begin);
     }

@@ -1,26 +1,26 @@
 (
-	lit [a]
+	[a]
 	(
-		lit [this]
-		lit [is]
-		lit [a]
-		lit [list]
+		[this]
+		[is]
+		[a]
+		[list]
 	)
 	(
-		lit [here's]
-		lit [another]
-		lit [list]
+		[here's]
+		[another]
+		[list]
 		(
-			lit [with]
-			lit [several]
+			[with]
+			[several]
 			(
-				lit [lists]
-				lit [in]
+				[lists]
+				[in]
 			)
-			lit [it]
+			[it]
 			(
 			)
 		)
-		quote [here is a quoted string]
+		["here is a quoted string"]
 	)
 )

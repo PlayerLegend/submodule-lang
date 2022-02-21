@@ -11,16 +11,16 @@
 #include "../../../../../convert/fd/source.h"
 #include "../../../../../log/log.h"
 #include "../../../../error/error.h"
-#include "../../../../../immutable/immutable.h"
+#include "../../../../../table/string.h"
 #include "../../../../tree/tree.h"
 #include "../../define.h"
 #include "../load.h"
 
 int main()
 {
-    immutable_namespace * namespace = immutable_namespace_new();
+    host_string_to_none_table table = { .link_size = table_string_link_size(table) };
     
-    lang_tree_node * load_root = load_tree (namespace);
+    lang_tree_node * load_root = load_tree (&table);
     lang_tree_node * occurances_root;
 
     assert (lang_tree_get_child(&occurances_root, load_root));
@@ -51,8 +51,6 @@ int main()
     lang_tree_free (instance);
 
     lang_define_clear (&define);
-
-    immutable_namespace_free(namespace);
 
     return 0;
 }

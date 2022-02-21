@@ -1,4 +1,5 @@
 #ifndef FLAT_INCLUDES
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -12,12 +13,12 @@
 #include "../../../../convert/fd/source.h"
 #include "../../../../log/log.h"
 #include "../../../error/error.h"
-#include "../../../../immutable/immutable.h"
+#include "../../../../table/string.h"
 #include "../../../tree/tree.h"
 #include "../define.h"
 #endif
 
-static lang_tree_node * load_tree (immutable_namespace * namespace)
+static lang_tree_node * load_tree (host_string_to_none_table * namespace)
 {
     window_unsigned_char contents = {0};
     

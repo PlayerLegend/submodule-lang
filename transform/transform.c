@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 #include "../../window/alloc.h"
 #include "../../convert/source.h"
 #include "../error/error.h"
-#include "../../immutable/immutable.h"
+#include "../../table/string.h"
 #include "../tree/tree.h"
 #include "transform.h"
 #include "../../log/log.h"

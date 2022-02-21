@@ -3,9 +3,11 @@ test/pp-list-occurances:	\
 	src/convert/fd/source.o \
 	src/window/alloc.o \
 	src/lang/tree/tree.o \
-	src/immutable/immutable.o \
+	src/table/string.o \
 	src/log/log.o \
 	src/lang/preprocessor/define/define.o \
+	src/range/streq.o \
+	src/range/range_strdup.o \
 	src/lang/tokenizer/tokenizer.o \
 	src/table/table.o \
 	src/window/string.o \
@@ -17,9 +19,11 @@ test/pp-set-occurances:	\
 	src/convert/fd/source.o \
 	src/window/alloc.o \
 	src/lang/tree/tree.o \
-	src/immutable/immutable.o \
+	src/table/string.o \
 	src/log/log.o \
 	src/lang/preprocessor/define/define.o \
+	src/range/streq.o \
+	src/range/range_strdup.o \
 	src/lang/tokenizer/tokenizer.o \
 	src/table/table.o \
 	src/window/string.o \
@@ -31,9 +35,11 @@ test/pp-lang-define-arg:	\
 	src/convert/fd/source.o \
 	src/window/alloc.o \
 	src/lang/tree/tree.o \
-	src/immutable/immutable.o \
+	src/table/string.o \
 	src/log/log.o \
 	src/lang/preprocessor/define/define.o \
+	src/range/streq.o \
+	src/range/range_strdup.o \
 	src/lang/tokenizer/tokenizer.o \
 	src/table/table.o \
 	src/window/string.o \
@@ -45,9 +51,11 @@ test/pp-invoke:	\
 	src/convert/fd/source.o \
 	src/window/alloc.o \
 	src/lang/tree/tree.o \
-	src/immutable/immutable.o \
+	src/table/string.o \
 	src/log/log.o \
 	src/lang/preprocessor/define/define.o \
+	src/range/streq.o \
+	src/range/range_strdup.o \
 	src/lang/tokenizer/tokenizer.o \
 	src/table/table.o \
 	src/window/string.o \

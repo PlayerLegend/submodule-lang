@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -10,7 +11,7 @@
 #include "../../../window/string.h"
 #include "../../../convert/source.h"
 #include "../../error/error.h"
-#include "../../../immutable/immutable.h"
+#include "../../../table/string.h"
 #include "../../tree/tree.h"
 #include "../../transform/transform.h"
 #include "file.h"
@@ -32,13 +33,8 @@ void transform_file_pwd (window_char * result, const range_const_lang_transform_
     }
 }
 
-bool transform_file_new (bool * error, lang_tree_node ** result, lang_transform_state * state, const lang_tree_node * root)
+bool transform_file_new (bool * error, lang_tree_node ** result, lang_transform_state * state, const table_string_query * path)
 {
-    if (!root->is_text)
-    {
-	return false;
-    }
-    
     lang_transform * top = lang_transform_alloc(&state->stack, sizeof(transform_file));
 
     top->iter = transform_file_iter;
@@ -47,8 +43,7 @@ bool transform_file_new (bool * error, lang_tree_node ** result, lang_transform_
 
     transform_file * file = lang_transform_arg(top, transform_file);
 
-    range_const_char basename;
-    range_string_init(&basename, root->immutable.text);
+    range_const_char basename = path->key;
     file->dirname = basename;
     range_basename (&basename, PATH_SEPARATOR);
     range_dirname (&file->dirname, PATH_SEPARATOR);
@@ -58,8 +53,10 @@ bool transform_file_new (bool * error, lang_tree_node ** result, lang_transform_
     window_path_cat (&full_path, PATH_SEPARATOR, &basename);
 
     assert (!*error);
+
+    transform_global * state_global = state->global;
     
-    file->root = lang_tree_load_path (error, ((transform_global*)state->global)->namespace, full_path.region.begin);
+    file->root = lang_tree_load_path (error, state_global->table, full_path.region.begin);
 
     return !*error;
 }
@@ -71,12 +68,12 @@ bool transform_file_iter(lang_transform_state * state, lang_transform * top)
     *top->result = file->root;
     file->root = NULL;
 
-    lang_transform_pop (state);
+    lang_transform_state_pop (state);
 
     return true;
 }
 
-void transform_file_free(lang_transform_state * state, lang_transform * target)
+void transform_file_clear(lang_transform_state * state, lang_transform * target)
 {
     lang_tree_free (lang_transform_arg(target, transform_file)->root);
 }

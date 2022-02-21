@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -11,18 +12,20 @@
 #include "../../../convert/source.h"
 #include "../../../convert/fd/source.h"
 #include "../../error/error.h"
-#include "../../../immutable/immutable.h"
+#include "../../../table/string.h"
 #include "../tree.h"
 #include "../../tokenizer/tokenizer.h"
 
 int main()
 {
     window_unsigned_char read_buffer = {0};
-    fd_source fd_read = fd_source_init (.fd = STDIN_FILENO, .contents = &read_buffer);
+    fd_source fd_read = fd_source_init (STDIN_FILENO, &read_buffer);
 
     bool error = false;
 
-    lang_tree_node * root = lang_tree_load_source (&error, NULL, &fd_read.source);
+    string_table table = {0};
+
+    lang_tree_node * root = lang_tree_load_source (&error, &table, &fd_read.source);
     
     if (!root)
     {
