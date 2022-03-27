@@ -14,3 +14,9 @@ typedef struct {
 
 #define lang_log_fatal(position, fmt, ...)				\
     { log_stderr("fatal:%d:%d: " fmt, (position).line, (position).col, ##__VA_ARGS__); goto fail; }
+
+#define lang_log_fatal_nojump(position, fmt, ...)				\
+    log_stderr("fatal:%d:%d: " fmt, (position).line, (position).col, ##__VA_ARGS__)
+
+#define lang_log_fatal_and(action, position, fmt, ...)			\
+    log_fatal_and(action, "fatal:%d:%d: " fmt, (position).line, (position).col, ##__VA_ARGS__)

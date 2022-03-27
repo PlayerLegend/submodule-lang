@@ -1,33 +1,19 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include <assert.h>
-#include <unistd.h>
-#define FLAT_INCLUDES
-#include "../../../range/def.h"
-#include "../../../log/log.h"
-#include "../../../window/def.h"
-#include "../../../window/alloc.h"
-#include "../../../keyargs/keyargs.h"
-#include "../../../convert/source.h"
-#include "../../../convert/fd/source.h"
-#include "../../error/error.h"
-#include "../../../table/string.h"
 #include "../tree.h"
-#include "../../tokenizer/tokenizer.h"
+#include "../../../convert/fd/source.h"
+#include <unistd.h>
+#include <assert.h>
+#include "../../../window/alloc.h"
 
 int main()
 {
     window_unsigned_char read_buffer = {0};
     fd_source fd_read = fd_source_init (STDIN_FILENO, &read_buffer);
 
-    bool error = false;
-
     string_table table = {0};
 
-    lang_tree_node * root = lang_tree_load_source (&error, &table, &fd_read.source);
-    
-    if (!root)
+    lang_tree_node * root;
+
+    if (!lang_tree_load_source (&root, &table, &fd_read.source))
     {
 	log_fatal ("A tree error occurred");
     }

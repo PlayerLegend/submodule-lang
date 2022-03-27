@@ -10,7 +10,7 @@ test/tree: src/table/table.o
 test/tree: src/table/string.o
 test/tree: src/range/streq.o
 test/tree: src/range/string_init.o
-test/tree: src/range/range_strdup.o
+test/tree: src/range/strdup.o
 
 test/run-tree: src/lang/tree/test/tree.test.sh
 

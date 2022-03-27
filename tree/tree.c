@@ -1,35 +1,28 @@
-#include <stdint.h>
+#include "tree.h"
+
+#include "../tokenizer/tokenizer.h"
+
 #include <assert.h>
-#include <stddef.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <fcntl.h>
-#define FLAT_INCLUDES
-#include "../../keyargs/keyargs.h"
-#include "../../range/def.h"
-#include "../../window/def.h"
+
 #include "../../window/alloc.h"
-#include "../../table/string.h"
-#include "../error/error.h"
-#include "../../convert/source.h"
+
 #include "../../convert/fd/source.h"
-#include "../tokenizer/tokenizer.h"
-#include "tree.h"
+
 #include "../../log/log.h"
 
-void lang_tree_build_start (lang_tree_build_env * env, string_table * table)
+void lang_tree_build_start (lang_tree_build_state * target)
 {
-    *env = (lang_tree_build_env){ .table = table };
-    env->root = NULL;
-    window_rewrite (env->stack);
-    *window_push (env->stack) = &env->root;
+    target->result = NULL;
+    window_rewrite (target->stack);
+    *window_push (target->stack) = &target->result;
 }
 
-bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_position * token_position, const range_const_char * token_text)
+bool lang_tree_build_update (lang_tree_build_state * target, const lang_token_position * token_position, const range_const_char * token_text)
 {
-    env->last_position = *token_position;
+    target->last_position = *token_position;
 
     if (range_is_empty (*token_text))
     {
@@ -38,12 +31,12 @@ bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_positio
     
     if (range_count(*token_text) == 1 && *token_text->begin == ')')
     {
-	assert (!range_is_empty (env->stack.region));
-	env->stack.region.end--;
+	assert (!range_is_empty (target->stack.region));
+	target->stack.region.end--;
 
-	if (range_is_empty (env->stack.region))
+	if (range_is_empty (target->stack.region))
 	{
-	    lang_log_fatal (env->last_position, "Extra closing paren");
+	    lang_log_fatal (target->last_position, "Extra closing paren");
 	}
 	else
 	{
@@ -54,25 +47,29 @@ bool lang_tree_build_update (lang_tree_build_env * env, const lang_token_positio
     {
 	lang_tree_node * new_node = calloc (1, sizeof(*new_node));
 	
-	*(env->stack.region.end[-1]) = new_node;
-	env->stack.region.end[-1] = &new_node->peer;
+	*(target->stack.region.end[-1]) = new_node;
+	target->stack.region.end[-1] = &new_node->peer;
 	
 	if (range_count(*token_text) == 1 && *token_text->begin == '(')
 	{
-	    *window_push (env->stack) = &new_node->child;
+	    *window_push (target->stack) = &new_node->child;
 	}
 	else
 	{
 	    new_node->is_text = true;
-	    new_node->ref = string_include_range(env->table, token_text);
+	    new_node->ref = string_include_range(target->table, token_text);
 	}
 
 	new_node->source_position = *token_position;
+	new_node->table = target->table;
 
 	return true;
     }
 
+    return true;
+    
 fail:
+
     return false;
 }
 
@@ -110,31 +107,27 @@ void lang_tree_free (lang_tree_node * root)
     free (stack.alloc.begin);
 }
 
-lang_tree_node * lang_tree_build_finish (bool * error, lang_tree_build_env * env)
+bool lang_tree_build_finish (lang_tree_build_state * target)
 {
-    if (range_count (env->stack.region) != 1)
+    if (range_count (target->stack.region) != 1)
     {
-	lang_tree_free (env->root);
-	lang_log_fatal (env->last_position, "Expected closing paren");
+	lang_log_fatal(target->last_position, "Expected closing paren");
     }
 
-    lang_tree_node * root = env->root;
-    
-    lang_tree_build_clear (env);
-    
-    return root;
+    lang_tree_build_clear (target);
 
+    return true;
+    
 fail:
-
-    lang_tree_build_clear (env);
-    *error = true;
-    return NULL;
+    lang_tree_free (target->result);
+    target->result = NULL;
+    lang_tree_build_clear (target);
+    return false;
 }
 
-void lang_tree_build_clear (lang_tree_build_env * env)
+void lang_tree_build_clear (lang_tree_build_state * target)
 {
-    window_clear(env->stack);
-    *env = (lang_tree_build_env){0};
+    window_clear(target->stack);
 }
 
 static void lang_node_print (int depth, lang_tree_node * node)
@@ -245,95 +238,103 @@ lang_tree_node * lang_tree_copy (const lang_tree_node * root)
     return copy_root;
 }
 
-lang_tree_node * lang_tree_load_source (bool * error, string_table * table, convert_source * source)
+bool lang_tree_load_source (lang_tree_node ** result, string_table * table, convert_source * source)
 {
-    range_const_char token;
+    lang_tokenizer_state tokenizer_state = { .input_position.line = 1 };
+
+    lang_tree_build_state build_state = { .table = table };
     
-    lang_tokenizer_state tokenizer_state = { 0 };
+    lang_tree_build_start(&build_state);
 
-    lang_tree_build_env build_env;
+    status status;
 
-    lang_tree_build_start(&build_env, table);
-
-    tokenizer_state.input_position.line = 1;
-
-    while (lang_tokenizer_read_source (error, &token, &tokenizer_state, source))
+    while ( STATUS_UPDATE == (status = lang_tokenizer_read_source(&tokenizer_state, source)) )
     {
-	if (!lang_tree_build_update(&build_env, &tokenizer_state.token_position, &token))
+	if (!lang_tree_build_update(&build_state, &tokenizer_state.token_position, &tokenizer_state.text))
 	{
-	    *error = true;
-	    return NULL;
+	    lang_log_fatal(tokenizer_state.token_position, "Tree error");
 	}
     }
-
-    if (*error)
+    
+    if (status == STATUS_ERROR)
     {
-	lang_tree_build_clear(&build_env);
-	return NULL;
+	lang_log_fatal(tokenizer_state.token_position, "Tokenizer error");
     }
 
-    return lang_tree_build_finish(error, &build_env);
+    lang_tree_build_finish(&build_state);
+
+    *result = build_state.result;
+
+    return true;
+
+fail:
+
+    lang_tree_build_finish(&build_state);
+
+    lang_tree_free (build_state.result);
+    
+    return false;
 }
 
-lang_tree_node * lang_tree_load_path (bool * error, string_table * table, const char * path)
+bool lang_tree_load_path (lang_tree_node ** result, string_table * table, const char * path)
 {
     window_unsigned_char contents = {0};
     fd_source fd_source = fd_source_init (open (path, O_RDONLY), &contents);
-    
+
     if (fd_source.fd < 0)
     {
-	perror (path);
-	*error = true;
-	return NULL;
+	log_fatal_and(perror(path); return false, "Could not open a tree file at path %s");
     }
-    
-    lang_tree_node * retval = lang_tree_load_source (error, table, &fd_source.source);
+
+    status status = lang_tree_load_source (result, table, &fd_source.source);
 
     convert_source_clear (&fd_source.source);
 
     window_clear (contents);
 
-    return retval;
+    return status;
 }
 
-lang_tree_node * lang_tree_load_mem (bool * error, string_table * table, range_const_unsigned_char * mem)
+bool lang_tree_load_mem (lang_tree_node ** result, string_table * table, range_const_unsigned_char * mem)
 {
-    range_const_char token;
+    lang_tokenizer_state tokenizer_state = { .input_position.line = 1 };
+
+    lang_tree_build_state build_state = { .table = table };
     
-    lang_tokenizer_state tokenizer_state = { 0 };
+    lang_tree_build_start(&build_state);
 
-    lang_tree_build_env build_env;
-
-    lang_tree_build_start(&build_env, table);
-
-    tokenizer_state.input_position.line = 1;
-
-    while (lang_tokenizer_read_mem (error, &token, &tokenizer_state, mem))
+    status status;
+    
+    while ( STATUS_UPDATE == (status = lang_tokenizer_read_mem(&tokenizer_state, &mem->char_cast.const_cast)) )
     {
-	if (!lang_tree_build_update(&build_env, &tokenizer_state.token_position, &token))
+	if (!lang_tree_build_update(&build_state, &tokenizer_state.token_position, &tokenizer_state.text))
 	{
-	    log_debug ("Failed to update tree");
-	    *error = true;
-	    return NULL;
+	    lang_log_fatal(tokenizer_state.token_position, "Tree error");
 	}
     }
 
-    if (*error)
+    if (status == STATUS_ERROR)
     {
-	log_debug ("Failed to read mem token");
-	lang_tree_build_clear(&build_env);
-	return NULL;
+	lang_log_fatal(tokenizer_state.token_position, "Tokenizer error");
     }
+    
+    lang_tree_build_finish(&build_state);
 
-    return lang_tree_build_finish(error, &build_env);
+    return true;
+
+fail:
+    
+    lang_tree_build_finish(&build_state);
+    lang_tree_free (build_state.result);
+
+    return false;
 }
 
-lang_tree_node * lang_tree_get_option_by_ref (bool * error, lang_tree_node * node, string_pair * match)
+bool lang_tree_get_arg_by_ref (lang_tree_node ** result, lang_tree_node * node, string_pair * match)
 {
     if (!node)
     {
-	*error = true;
-	return NULL;
+	return false;
     }
 
     lang_tree_node * child;
@@ -346,7 +347,8 @@ lang_tree_node * lang_tree_get_option_by_ref (bool * error, lang_tree_node * nod
 	    if (child->ref == match)
 	    {
 		assert (child->is_text);
-		return child->peer;
+		*result = child->peer;
+		return true;
 	    }
 	}
 	
@@ -354,6 +356,5 @@ lang_tree_node * lang_tree_get_option_by_ref (bool * error, lang_tree_node * nod
     }
     while (node);
 
-    *error = true;
-    return NULL;
+    return false;
 }
