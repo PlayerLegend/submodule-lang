@@ -1,7 +1,9 @@
 #ifndef FLAT_INCLUDES
+#include "../../table/string.h"
+#include "../../window/def.h"
+#include "../../convert/status.h"
 #include "../../convert/source.h"
 #include "../error/error.h"
-#include "../../table/string.h"
 #endif
 
 typedef struct lang_tree_node lang_tree_node;

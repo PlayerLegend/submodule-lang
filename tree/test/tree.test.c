@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include "../../../window/alloc.h"
+#include "../../../log/log.h"
 
 int main()
 {

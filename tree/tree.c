@@ -1,11 +1,11 @@
 #include "tree.h"
 
-#include "../tokenizer/tokenizer.h"
-
 #include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+
+#include "../tokenizer/tokenizer.h"
+
 
 #include "../../window/alloc.h"
 
@@ -283,7 +283,8 @@ bool lang_tree_load_path (lang_tree_node ** result, string_table * table, const 
 
     if (fd_source.fd < 0)
     {
-	log_fatal_and(perror(path); return false, "Could not open a tree file at path %s");
+	perror(path);
+	log_fatal("Could not open a tree file at path %s");
     }
 
     status status = lang_tree_load_source (result, table, &fd_source.source);
@@ -293,6 +294,9 @@ bool lang_tree_load_path (lang_tree_node ** result, string_table * table, const 
     window_clear (contents);
 
     return status;
+
+fail:
+    return false;
 }
 
 bool lang_tree_load_mem (lang_tree_node ** result, string_table * table, range_const_unsigned_char * mem)
