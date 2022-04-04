@@ -20,18 +20,4 @@ run-tokenizer-tests:
 
 depend: tokenizer-depend
 tokenizer-depend:
-	sh makedepend.sh src/lang/tokenizer/tokenizer.makefile
-
-# DO NOT DELETE
-
-src/lang/tokenizer/tokenizer.o: src/lang/tokenizer/tokenizer.h
-src/lang/tokenizer/tokenizer.o: src/convert/source.h src/range/def.h
-src/lang/tokenizer/tokenizer.o: src/window/def.h src/convert/status.h
-src/lang/tokenizer/tokenizer.o: src/lang/error/error.h
-src/lang/tokenizer/test/tokenizer.test.o: src/lang/tokenizer/tokenizer.h
-src/lang/tokenizer/test/tokenizer.test.o: src/convert/source.h
-src/lang/tokenizer/test/tokenizer.test.o: src/range/def.h src/window/def.h
-src/lang/tokenizer/test/tokenizer.test.o: src/convert/status.h
-src/lang/tokenizer/test/tokenizer.test.o: src/lang/error/error.h
-src/lang/tokenizer/test/tokenizer.test.o: src/convert/fd/source.h
-src/lang/tokenizer/test/tokenizer.test.o: src/window/alloc.h src/log/log.h
+	cdeps src/lang/tokenizer > src/lang/tokenizer/depends.makefile

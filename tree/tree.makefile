@@ -22,22 +22,8 @@ SH_PROGRAMS += test/run-tree
 
 depend: tree-depend
 tree-depend:
-	sh makedepend.sh src/lang/tree/tree.makefile
+	cdeps src/lang/tree > src/lang/tree/depends.makefile
 
 run-tests: run-tree-tests
 run-tree-tests:
 	DEPENDS=tree-tests sh run-tests.sh test/run-tree
-
-# DO NOT DELETE
-
-src/lang/tree/test/tree.test.o: src/lang/tree/tree.h src/table/string.h
-src/lang/tree/test/tree.test.o: src/range/def.h src/window/def.h
-src/lang/tree/test/tree.test.o: src/convert/status.h src/convert/source.h
-src/lang/tree/test/tree.test.o: src/lang/error/error.h
-src/lang/tree/test/tree.test.o: src/convert/fd/source.h src/window/alloc.h
-src/lang/tree/test/tree.test.o: src/log/log.h
-src/lang/tree/tree.o: src/lang/tree/tree.h src/table/string.h src/range/def.h
-src/lang/tree/tree.o: src/window/def.h src/convert/status.h
-src/lang/tree/tree.o: src/convert/source.h src/lang/error/error.h
-src/lang/tree/tree.o: src/lang/tokenizer/tokenizer.h src/window/alloc.h
-src/lang/tree/tree.o: src/convert/fd/source.h src/log/log.h
