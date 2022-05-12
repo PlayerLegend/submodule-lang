@@ -309,7 +309,7 @@ bool lang_tree_load_mem (lang_tree_node ** result, string_table * table, range_c
 
     status status;
     
-    while ( STATUS_UPDATE == (status = lang_tokenizer_read_mem(&tokenizer_state, &mem->char_cast.const_cast)) )
+    while ( STATUS_UPDATE == (status = lang_tokenizer_read_mem(&tokenizer_state, &mem->char_cast.alias_const)) )
     {
 	if (!lang_tree_build_update(&build_state, &tokenizer_state.token_position, &tokenizer_state.text))
 	{

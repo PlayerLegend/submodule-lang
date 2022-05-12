@@ -114,7 +114,7 @@ status lang_tokenizer_read_source (lang_tokenizer_state * state, convert_source 
     
 retry:
     
-    state->text = source->contents->region.char_cast.const_cast;
+    state->text = source->contents->region.char_cast.alias_const;
 
     token_status = lang_token_bound(state);
 
@@ -132,7 +132,7 @@ retry:
 	}
     }
     
-    source->contents->region.char_cast.const_cast.begin = state->text.end;
+    source->contents->region.char_cast.alias_const.begin = state->text.end;
 
     return token_status;
 }
