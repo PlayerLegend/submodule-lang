@@ -1,6 +1,6 @@
 src/lang/tree/test/tree.test.o: src/convert/fd/source.h
 src/lang/tree/test/tree.test.o: src/convert/source.h
-src/lang/tree/test/tree.test.o: src/convert/status.h
+src/lang/tree/test/tree.test.o: src/convert/type.h
 src/lang/tree/test/tree.test.o: src/lang/error/error.h
 src/lang/tree/test/tree.test.o: src/lang/tree/tree.h
 src/lang/tree/test/tree.test.o: src/log/log.h
@@ -10,7 +10,7 @@ src/lang/tree/test/tree.test.o: src/window/alloc.h
 src/lang/tree/test/tree.test.o: src/window/def.h
 src/lang/tree/tree.o: src/convert/fd/source.h
 src/lang/tree/tree.o: src/convert/source.h
-src/lang/tree/tree.o: src/convert/status.h
+src/lang/tree/tree.o: src/convert/type.h
 src/lang/tree/tree.o: src/lang/error/error.h
 src/lang/tree/tree.o: src/lang/tokenizer/tokenizer.h
 src/lang/tree/tree.o: src/lang/tree/tree.h

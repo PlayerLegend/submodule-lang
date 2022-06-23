@@ -1,5 +1,6 @@
 #include "tokenizer.h"
 
+#include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
 

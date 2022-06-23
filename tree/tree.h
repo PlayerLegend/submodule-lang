@@ -1,7 +1,7 @@
 #ifndef FLAT_INCLUDES
 #include "../../table/string.h"
 #include "../../window/def.h"
-#include "../../convert/status.h"
+#include "../../convert/type.h"
 #include "../../convert/source.h"
 #include "../error/error.h"
 #endif
